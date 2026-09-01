@@ -7,7 +7,6 @@ using System;
 namespace PhysicsLayerPresets;
 public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
 {
-    private enum NameValidityStatus { Valid, Empty, Duplicate };
     public static Action OnSettingsButtonClicked { get; set; }
 
     public override bool _CanHandle(GodotObject @object)
@@ -106,28 +105,7 @@ public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
             return false;
         }
         return false;
-    }
-
-    private static NameValidityStatus IsNameValid(string newText, Dictionary<string, uint> presets)
-    {
-        if (string.IsNullOrWhiteSpace(newText))
-            return NameValidityStatus.Empty;
-
-        if (presets.ContainsKey(newText))
-            return NameValidityStatus.Duplicate;
-
-        return NameValidityStatus.Valid;
-    }
-
-    private static string GetStatusMessage(NameValidityStatus status) => 
-        status switch
-        {
-            NameValidityStatus.Valid => "Name is valid",
-            NameValidityStatus.Empty => "Name can not be empty",
-            NameValidityStatus.Duplicate => "Preset with this name already exists",
-            _ => "Name can not be empty",
-        };
-    
+    }    
 
     private static string FindPhysicsLayerProperty(GodotObject @object)
     {
