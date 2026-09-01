@@ -1,17 +1,20 @@
 #if TOOLS
 
 using Godot;
-using Godot.Collections;
 
 namespace PhysicsLayerPresets;
 [Tool]
 public partial class PhysicsLayerPresetsInspectorPlugin : EditorPlugin
 {
     private PhysicsLayerPresetsInspector _inspector;
+    private SettingsWindowController _settingsWindowController;
 
     public override void _EnterTree()
     {
+        CreateColorSettings();
         _inspector = new PhysicsLayerPresetsInspector();
+        _settingsWindowController = new SettingsWindowController();
+        AddInspectorPlugin(_settingsWindowController);
         AddInspectorPlugin(_inspector);
     }
 
@@ -20,47 +23,20 @@ public partial class PhysicsLayerPresetsInspectorPlugin : EditorPlugin
         if (_inspector != null)
         {
             RemoveInspectorPlugin(_inspector);
+            _inspector = null;
+        }
+
+        if (_settingsWindowController != null)
+        {
+            _settingsWindowController.CloseSettingsWindow();
+            RemoveInspectorPlugin(_settingsWindowController);
+            _settingsWindowController = null;
         }
     }
 
-    public static Dictionary<string, uint> GetPresets()
+    private void CreateColorSettings()
     {
-        if (ProjectSettings.HasSetting(SettingsConstants.PhysicsLayers3DPresetsSetting))
-        {
-            Variant savedVariant = ProjectSettings.GetSetting(SettingsConstants.PhysicsLayers3DPresetsSetting);
-            var dictionary = savedVariant.As<Dictionary<string, uint>>();
-            return dictionary;
-        }
 
-        return [];
-    }
-
-    public static void AddPreset(string name, uint value)
-    {
-        if (ProjectSettings.HasSetting(SettingsConstants.PhysicsLayers3DPresetsSetting))
-        {
-            Variant savedVariant = ProjectSettings.GetSetting(SettingsConstants.PhysicsLayers3DPresetsSetting);
-            var dictionary = savedVariant.As<Dictionary<string, uint>>();
-            dictionary.Add(name, value);
-            ProjectSettings.SetSetting(SettingsConstants.PhysicsLayers3DPresetsSetting, dictionary);
-        }
-        else
-        {
-            var dictionary = new Dictionary<string, uint>() { {name, value } };
-            ProjectSettings.SetSetting(SettingsConstants.PhysicsLayers3DPresetsSetting, dictionary);
-        }
-
-        var propertyInfo = new Dictionary
-            {
-                { "name", SettingsConstants.PhysicsLayers3DPresetsSetting },
-                { "type", (int)Variant.Type.Dictionary },
-                { "hint", (int)PropertyHint.DictionaryType }, 
-                // https://docs.godotengine.org/en/stable/classes/class_%40globalscope.html#enum-globalscope-propertyhint
-                // 11 is for the 3D Physics layer
-                { "hint_string", $"{(int)Variant.Type.String}:;{(int)Variant.Type.Int}/11:" }
-            };
-        ProjectSettings.AddPropertyInfo(propertyInfo);
-        ProjectSettings.Save();
     }
 }
 #endif

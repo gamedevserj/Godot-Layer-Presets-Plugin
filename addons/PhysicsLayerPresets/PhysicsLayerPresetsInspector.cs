@@ -2,74 +2,50 @@
 
 using Godot;
 using Godot.Collections;
+using System;
 
 namespace PhysicsLayerPresets;
 public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
 {
     private enum NameValidityStatus { Valid, Empty, Duplicate };
+    public static Action OnSettingsButtonClicked { get; set; }
 
     public override bool _CanHandle(GodotObject @object)
     {
         return FindPhysicsLayerProperty(@object) != null;
     }
 
+    private static void OnSettingsButtonPressed() => OnSettingsButtonClicked?.Invoke();
+
     public override bool _ParseProperty(GodotObject @object, Variant.Type type, string name, PropertyHint hintType, string hintString, PropertyUsageFlags usageFlags, bool wide)
     {
         bool isPhysics3DLayer = (type == Variant.Type.Int && hintType == PropertyHint.Layers3DPhysics);
         if (isPhysics3DLayer)
         {
-            var presets = PhysicsLayerPresetsInspectorPlugin.GetPresets();
+            var presets = PresetsController.GetPresets();
             var container = new HBoxContainer();
             var createPresetButton = new Button
             {
                 Text = "Create preset from current",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
             };
+            // https://godotengine.github.io/editor-icons/
+            var icon = EditorInterface.Singleton.GetBaseControl().GetThemeIcon("GDScript", "EditorIcons");
+            var settingsButton = new Button
+            {
+                Icon = icon,
+                CustomMaximumSize = new Vector2(50, 50),
+            };
+            settingsButton.Pressed += OnSettingsButtonPressed;
 
             createPresetButton.Pressed += () =>
             {
                 var currentLayer = (uint)@object.Get(name);
                 var editorWindow = EditorInterface.Singleton.GetBaseControl();
 
-                var dialog = new ConfirmationDialog
-                {
-                    Title = "Adding new preset",
-                };
-                var okButton = dialog.GetOkButton();
-                var verticalContainer = new VBoxContainer
-                {
-                    SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                    SizeFlagsVertical = Control.SizeFlags.ExpandFill
-                };
-                var nameIsValidLabel = new Label { Text = "Enter preset name" };
-                var inputField = new LineEdit { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-
-                verticalContainer.AddChild(inputField);
-                verticalContainer.AddChild(nameIsValidLabel);
-                dialog.AddChild(verticalContainer);
+                var dialog = new CreateLayerDialog(@object, presets, currentLayer);
                 editorWindow.AddChild(dialog);
-
-                inputField.TextChanged += (string newText) =>
-                {
-                    var status = IsNameValid(newText, presets);
-                    nameIsValidLabel.Text = GetStatusMessage(status);
-                    okButton.Disabled = status != NameValidityStatus.Valid;
-                };
-
-                dialog.Confirmed += () =>
-                {
-                    var name = inputField.Text;
-                    PhysicsLayerPresetsInspectorPlugin.AddPreset(name, currentLayer);
-                    dialog.QueueFree();
-                    @object.NotifyPropertyListChanged();
-                };
-
-                okButton.Disabled = true;
-                dialog.Canceled += () => dialog.QueueFree();
-                dialog.CloseRequested += () => dialog.QueueFree();
-                
-                dialog.PopupCentered();
-                inputField.GrabFocus();
+                dialog.ShowDialog();
             };
 
             if (presets.Count > 0)
@@ -123,6 +99,7 @@ public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
             }
 
             container.AddChild(createPresetButton);
+            container.AddChild(settingsButton);
             AddCustomControl(container);
 
             // returning fales makes Godot render the rest as is
