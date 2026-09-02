@@ -3,6 +3,8 @@
 using Godot;
 using Godot.Collections;
 using System;
+using System.Xml.Linq;
+using Utilities;
 
 namespace PhysicsLayerPresets;
 public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
@@ -16,28 +18,48 @@ public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
 
     private static void OnSettingsButtonPressed() => OnSettingsButtonClicked?.Invoke();
 
+    //private void Test() => GD.Print("test");
+
     public override bool _ParseProperty(GodotObject @object, Variant.Type type, string name, PropertyHint hintType, string hintString, PropertyUsageFlags usageFlags, bool wide)
     {
         bool isPhysics3DLayer = (type == Variant.Type.Int && hintType == PropertyHint.Layers3DPhysics);
         if (isPhysics3DLayer)
         {
+            Debug.Log($"name = {@object}");
+            //var pickerRow2 = new LayerPickerRow2((uint)@object.Get(name));
+            //pickerRow2.Visible = false;
+            //AddCustomControl(pickerRow2);
+            //return true;
+            //GD.Print("type = " + @object.GetType());
+            //GD.Print("prop connected = " + @object.HasConnections("property_list_changed"));
+            //var connections = @object.GetSignalConnectionList("property_list_changed");
+
+            //if (!@object.IsConnected("property_list_changed", Callable.From(Test)))
+            //{
+            //    @object.Connect("property_list_changed", Callable.From(Test));
+            //}
+            //foreach (var c in connections)
+            //{
+            //    foreach (var item in c)
+            //    {
+            //        GD.Print($"key = { item.Key}, value = {item.Value}");
+            //    }
+            //}
             var presets = PresetsController.GetPresets();
             var container = new HBoxContainer();
-            var createPresetButton = new Button
+            var newPresetButton = new Button
             {
-                Text = "Create preset from current",
+                Text = "New preset from current",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
             };
+
             // https://godotengine.github.io/editor-icons/
             var icon = EditorInterface.Singleton.GetBaseControl().GetThemeIcon("GDScript", "EditorIcons");
-            var settingsButton = new Button
-            {
-                Icon = icon,
-                CustomMaximumSize = new Vector2(50, 50),
-            };
+            var settingsButton = new Button();
+            settingsButton.Icon = icon;
             settingsButton.Pressed += OnSettingsButtonPressed;
 
-            createPresetButton.Pressed += () =>
+            newPresetButton.Pressed += () =>
             {
                 var currentLayer = (uint)@object.Get(name);
                 var editorWindow = EditorInterface.Singleton.GetBaseControl();
@@ -47,57 +69,13 @@ public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
                 dialog.ShowDialog();
             };
 
-            if (presets.Count > 0)
+            if (presets.Length > 0)
             {
-                var dropdown = new OptionButton
-                {
-                    SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-                };
+                var dropdown = new PresetsDropdown(@object, name, presets);
                 container.AddChild(dropdown);
-                
-                int index = 0;
-                // dropdown selects by indexes, so I store them
-                var masks = new System.Collections.Generic.List<(uint mask, int index)>();
-                foreach (var kvp in presets)
-                {
-                    AddItem(kvp);
-                }
-
-                void AddItem(System.Collections.Generic.KeyValuePair<string, uint> kvp)
-                {
-                    dropdown.AddItem(kvp.Key);
-                    masks.Add((kvp.Value, index));
-                    index++;
-                }
-
-                // selecting initial value
-                uint currentMask = (uint)@object.Get(name);
-                var match = -1;
-                for (int i = 0; i < masks.Count; i++)
-                {
-                    if (masks[i].mask == currentMask)
-                    {
-                        match = masks[i].index;
-                        break;
-                    }
-                }
-                dropdown.Select(match);
-                if (match == -1)
-                {
-                    dropdown.Text = "No preset";
-                }
-
-                dropdown.ItemSelected += (long index) =>
-                {
-                    var presetName = dropdown.GetItemText((int)index);
-                    var preset = presets[presetName];
-
-                    @object.Set(name, preset);
-                    @object.NotifyPropertyListChanged();
-                };
             }
-
-            container.AddChild(createPresetButton);
+            
+            container.AddChild(newPresetButton);
             container.AddChild(settingsButton);
             AddCustomControl(container);
 
@@ -105,7 +83,7 @@ public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
             return false;
         }
         return false;
-    }    
+    }
 
     private static string FindPhysicsLayerProperty(GodotObject @object)
     {
@@ -116,10 +94,10 @@ public partial class PhysicsLayerPresetsInspector : EditorInspectorPlugin
             long typeInt = (long)prop["type"];
             long hintInt = (long)prop["hint"];
 
-            if ((Variant.Type)typeInt == Variant.Type.Int &&
-                ((PropertyHint)hintInt == PropertyHint.Layers2DPhysics ||
-                 (PropertyHint)hintInt == PropertyHint.Layers3DPhysics))
+            if ((Variant.Type)typeInt == Variant.Type.Int && (PropertyHint)hintInt == PropertyHint.Layers3DPhysics)
             {
+                GD.Print($"prop[name] = {prop["name"]}");
+                //GD.Print($"prop[name] = {(uint)@object.Get(name)}");
                 return (string)prop["name"];
             }
         }

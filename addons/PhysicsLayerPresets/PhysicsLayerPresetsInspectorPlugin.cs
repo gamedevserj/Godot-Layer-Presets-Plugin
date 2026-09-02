@@ -1,6 +1,7 @@
 #if TOOLS
 
 using Godot;
+using System.Xml.Linq;
 
 namespace PhysicsLayerPresets;
 [Tool]
@@ -28,7 +29,6 @@ public partial class PhysicsLayerPresetsInspectorPlugin : EditorPlugin
 
         if (_settingsWindowController != null)
         {
-            _settingsWindowController.CloseSettingsWindow();
             RemoveInspectorPlugin(_settingsWindowController);
             _settingsWindowController = null;
         }

@@ -1,5 +1,6 @@
 using Godot;
 using Godot.Collections;
+using System;
 
 namespace PhysicsLayerPresets;
 public partial class CreateLayerDialog : ConfirmationDialog
@@ -11,10 +12,11 @@ public partial class CreateLayerDialog : ConfirmationDialog
     public CreateLayerDialog()
     {}
 
-    public CreateLayerDialog(GodotObject @object, Dictionary<string, uint> presets, uint currentLayer)
+    public CreateLayerDialog(GodotObject @object, PresetData[] presets, uint currentLayer)
     {
         Title = "Adding new preset";
         DialogCloseOnEscape = true;
+
         var okButton = GetOkButton();
         var verticalContainer = new VBoxContainer
         {
@@ -28,9 +30,15 @@ public partial class CreateLayerDialog : ConfirmationDialog
         verticalContainer.AddChild(nameIsValidLabel);
         AddChild(verticalContainer);
 
+        System.Collections.Generic.HashSet<string> presetNames = [];
+        for (int i = 0; i < presets.Length; i++)
+        {
+            presetNames.Add(presets[i].Name);
+        }
+
         _inputField.TextChanged += (string newText) =>
         {
-            var status = IsNameValid(newText, presets);
+            var status = IsNameValid(newText, presetNames);
             nameIsValidLabel.Text = GetStatusMessage(status);
             okButton.Disabled = status != NameValidityStatus.Valid;
         };
@@ -38,7 +46,8 @@ public partial class CreateLayerDialog : ConfirmationDialog
         Confirmed += () =>
         {
             var name = _inputField.Text;
-            PresetsController.AddPreset(name, currentLayer);
+            var id = Guid.NewGuid().ToString();
+            PresetsController.AddPreset(id, name, currentLayer);
             QueueFree();
             @object.NotifyPropertyListChanged();
         };
@@ -54,12 +63,12 @@ public partial class CreateLayerDialog : ConfirmationDialog
         _inputField.GrabFocus();
     }
 
-    private static NameValidityStatus IsNameValid(string newText, Dictionary<string, uint> presets)
+    private static NameValidityStatus IsNameValid(string newText, System.Collections.Generic.HashSet<string> presets)
     {
         if (string.IsNullOrWhiteSpace(newText))
             return NameValidityStatus.Empty;
 
-        if (presets.ContainsKey(newText))
+        if (presets.Contains(newText))
             return NameValidityStatus.Duplicate;
 
         return NameValidityStatus.Valid;
