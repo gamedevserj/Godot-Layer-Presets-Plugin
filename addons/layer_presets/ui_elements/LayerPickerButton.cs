@@ -1,7 +1,6 @@
 using Godot;
-using System;
 
-namespace PhysicsLayerPresets;
+namespace LayerPresets;
 public partial class LayerPickerButton : Button
 {
     private const string NormalColor = "263548";
@@ -9,13 +8,14 @@ public partial class LayerPickerButton : Button
     private const string HoverPressedColor = "477dc6";
     private const string PressedColor = "386ca6";
     private const int FontSize = 16;
-    
-    public event Action<uint> LayerChanged;
+
+    public int Bit { get; private set; }
 
     public LayerPickerButton() { }
 
-    public LayerPickerButton(int bit, string name, uint layer, Vector2 size)
+    public LayerPickerButton(int bit, string tooltipText, Vector2 size)
     {
+        Bit = bit;
         var label = new Label
         {
             Text = (bit + 1).ToString(),
@@ -28,11 +28,10 @@ public partial class LayerPickerButton : Button
         label.AddThemeFontSizeOverride("font_size", FontSize);
         AddChild(label);
 
-        TooltipText = name;
+        TooltipText = tooltipText;
         ToggleMode = true;
-        ButtonPressed = (layer & (1u << bit)) != 0;
-        SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        SizeFlagsVertical = SizeFlags.ExpandFill;
+        SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        SizeFlagsVertical = SizeFlags.ShrinkCenter;
         CustomMinimumSize = size;
 
         var normalStyle = new StyleBoxFlat();
@@ -51,11 +50,5 @@ public partial class LayerPickerButton : Button
         AddThemeStyleboxOverride("hover", hoverStyle);
         AddThemeStyleboxOverride("hover_pressed", hoverPressedStyle);
         AddThemeStyleboxOverride("pressed", pressedStyle);
-
-        Toggled += pressed =>
-        {
-            layer = pressed ? layer | (1u << bit) : layer & ~(1u << bit);
-            LayerChanged?.Invoke(layer);
-        };
     }
 }

@@ -1,20 +1,23 @@
 using Godot;
-using Godot.Collections;
 using System;
+using System.Collections.Generic;
 
-namespace PhysicsLayerPresets;
-public partial class CreateLayerDialog : ConfirmationDialog
+namespace LayerPresets;
+public partial class CreateNewPresetDialog : ConfirmationDialog
 {
     private enum NameValidityStatus { Valid, Empty, Duplicate };
 
-    private LineEdit _inputField;
+    private readonly LineEdit _inputField;
+    private readonly PropertyHint _propertyHint;
 
-    public CreateLayerDialog()
+    public CreateNewPresetDialog()
     {}
 
-    public CreateLayerDialog(GodotObject @object, PresetData[] presets, uint currentLayer)
+    public CreateNewPresetDialog(GodotObject @object, string propertyName, uint currentLayer, PropertyHint propertyHint)
     {
-        Title = "Adding new preset";
+        _propertyHint = propertyHint;
+        var presets = PresetsController.GetAllPresets(propertyHint);
+        Title = $"Adding new {propertyHint} preset";
         DialogCloseOnEscape = true;
 
         var okButton = GetOkButton();
@@ -30,31 +33,43 @@ public partial class CreateLayerDialog : ConfirmationDialog
         verticalContainer.AddChild(nameIsValidLabel);
         AddChild(verticalContainer);
 
-        System.Collections.Generic.HashSet<string> presetNames = [];
-        for (int i = 0; i < presets.Length; i++)
+        HashSet<string> presetNames = [];
+        foreach (var preset in presets)
         {
-            presetNames.Add(presets[i].Name);
+            presetNames.Add(preset.Value.Name);
         }
 
-        _inputField.TextChanged += (string newText) =>
+        _inputField.TextChanged += (newText) =>
         {
             var status = IsNameValid(newText, presetNames);
             nameIsValidLabel.Text = GetStatusMessage(status);
             okButton.Disabled = status != NameValidityStatus.Valid;
         };
 
+        _inputField.TextSubmitted += (newText) =>
+        {
+            var status = IsNameValid(newText, presetNames);
+            if (status == NameValidityStatus.Valid)
+            {
+                EmitSignalConfirmed();
+            }
+        };
+
         Confirmed += () =>
         {
             var name = _inputField.Text;
             var id = Guid.NewGuid().ToString();
-            PresetsController.AddPreset(id, name, currentLayer);
-            QueueFree();
+            PresetsController.AddPreset(new PresetData(id, name, currentLayer, _propertyHint));
+            @object.SetMeta(PresetsController.GetPresetMetaName(@object, propertyName, propertyHint), id);
             @object.NotifyPropertyListChanged();
+            QueueFree();
         };
 
         okButton.Disabled = true;
-        Canceled += () => QueueFree();
-        CloseRequested += () => QueueFree();
+
+        FocusExited += QueueFree;
+        Canceled += QueueFree;
+        CloseRequested += QueueFree;
     }
 
     public void ShowDialog()
@@ -63,12 +78,12 @@ public partial class CreateLayerDialog : ConfirmationDialog
         _inputField.GrabFocus();
     }
 
-    private static NameValidityStatus IsNameValid(string newText, System.Collections.Generic.HashSet<string> presets)
+    private static NameValidityStatus IsNameValid(string newPresetName, HashSet<string> presetNames)
     {
-        if (string.IsNullOrWhiteSpace(newText))
+        if (string.IsNullOrWhiteSpace(newPresetName))
             return NameValidityStatus.Empty;
 
-        if (presets.Contains(newText))
+        if (presetNames.Contains(newPresetName))
             return NameValidityStatus.Duplicate;
 
         return NameValidityStatus.Valid;
