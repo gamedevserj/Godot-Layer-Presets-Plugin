@@ -9,8 +9,6 @@ public partial class LayerPickerButton : Button
     private const string PressedColor = "386ca6";
     private const int FontSize = 16;
 
-    public int Bit { get; private set; }
-
     public LayerPickerButton() { }
 
     public LayerPickerButton(int bit, string tooltipText, Vector2 size)
@@ -51,4 +49,6 @@ public partial class LayerPickerButton : Button
         AddThemeStyleboxOverride("hover_pressed", hoverPressedStyle);
         AddThemeStyleboxOverride("pressed", pressedStyle);
     }
+
+    public int Bit { get; private set; }
 }

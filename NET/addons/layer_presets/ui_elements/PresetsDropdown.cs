@@ -52,6 +52,33 @@ public partial class PresetsDropdown : OptionButton
 
     public override void _ExitTree() => PresetsController.OnPresetEdited -= OnPresetEdited;
 
+    public void UpdateOnReset()
+    {
+        var presets = GetPresets();
+        var layersToIndexesBind = new List<(uint layer, int index)>();
+        for (int i = 0; i < presets.Length; i++)
+        {
+            AddItem(presets[i].Name);
+            layersToIndexesBind.Add((presets[i].Layer, i));
+        }
+
+        var match = -1;
+        for (int i = 0; i < layersToIndexesBind.Count; i++)
+        {
+            if (layersToIndexesBind[i].layer == SettingsConstants.DefaultLayerValue)
+            {
+                match = layersToIndexesBind[i].index;
+                break;
+            }
+        }
+
+        Select(match);
+        if (match == -1)
+        {
+            Text = "No preset";
+        }
+    }
+
     private uint GetSelectedLayer(long index)
     {
         var presets = GetPresets();

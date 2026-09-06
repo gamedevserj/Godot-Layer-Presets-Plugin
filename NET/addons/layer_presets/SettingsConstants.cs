@@ -4,6 +4,8 @@ using System.Collections.Generic;
 namespace LayerPresets;
 internal static class SettingsConstants
 {
+    public const uint DefaultLayerValue = 1;
+
     public static readonly Vector2I SettingsWindowSize = DisplayServer.ScreenGetSize() / 2;
     public static readonly HashSet<PropertyHint> HandledProperties =
         [

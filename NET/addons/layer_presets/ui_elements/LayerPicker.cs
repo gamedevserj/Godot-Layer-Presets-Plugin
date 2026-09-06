@@ -8,26 +8,22 @@ public partial class LayerPicker : GridContainer
 {
     private const int SizeUpdatePadding = 5;
     private readonly ExpandLayerSectionsButton _expandButton;
-
+    
     private int[] _limits = new int[4];
-    private List<GridContainer> _sections = [];
+    private readonly List<GridContainer> _sections = [];
     private bool _expand;
-
-    public Action<uint> OnLayerUpdatedManually { get; set; }
     private LayerPickerButton[] _buttons = new LayerPickerButton[32];
 
     public LayerPicker() { } 
 
-    public LayerPicker(uint layer, ExpandLayerSectionsButton expandButton)
+    public LayerPicker(uint layer, ExpandLayerSectionsButton expandButton) 
     {
         _expandButton = expandButton;
-        _expandButton.Pressed += () =>
-        {
-            _expand = true;
-            UpdateColumns();
-        };
+        _expandButton.OnButtonPressed += OnExpand;
         Init(layer);
     }
+
+    public Action<uint> OnLayerUpdatedManually { get; set; }
 
     public override void _Notification(int what)
     {
@@ -36,6 +32,21 @@ public partial class LayerPicker : GridContainer
             CalculateLimits();
             UpdateColumns();
         }
+    }
+
+    public void UpdateOnReset()
+    {
+        for (int i = 0; i < 32; i++)
+        {
+            int bit = i;
+            _buttons[i].ButtonPressed = (1 & (1u << bit)) != 0;
+        }
+    }
+
+    private void OnExpand()
+    {
+        _expand = true;
+        UpdateColumns();
     }
 
     private void Init(uint layer)

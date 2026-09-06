@@ -4,11 +4,6 @@ using Godot.Collections;
 namespace LayerPresets;
 public partial class PresetData : GodotObject
 {
-    public string Id { get; private set; }
-    public string Name { get; private set; }
-    public uint Layer {  get; private set; }
-    public PropertyHint LayerType { get; private set; }
-
     public PresetData() { }
 
     public PresetData(string id, string name, uint layer, PropertyHint layerType)
@@ -26,6 +21,12 @@ public partial class PresetData : GodotObject
         Layer = dictionary["layer"].As<uint>();
         LayerType = dictionary["layerType"].As<PropertyHint>();
     }
+
+    public string Id { get; private set; }
+    public string Name { get; private set; }
+    public uint Layer { get; private set; }
+    public PropertyHint LayerType { get; private set; }
+
 
     public void SetName(string name)
     {

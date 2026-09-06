@@ -5,12 +5,10 @@ namespace LayerPresets;
 [Tool]
 public partial class CustomLayerMaskProperty : EditorProperty
 {
-    private const uint DefaultLayerValue = 1;
-
     private readonly PropertyHint _propertyHint;
     private readonly GodotObject _object;
     private readonly LayerPicker _layerPicker;
-    private readonly Button _resetButton;
+    private readonly PresetsDropdown _dropdown;
 
     public CustomLayerMaskProperty()
     {}
@@ -30,30 +28,24 @@ public partial class CustomLayerMaskProperty : EditorProperty
 
         var verticalContainer = new VBoxContainer();
         verticalContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        verticalContainer.AddThemeConstantOverride("separation", 10);
+        verticalContainer.AddThemeConstantOverride("separation", 10); 
         
-        var addNewPresetButton = new AddNewPresetButton(@object, propertyName, propertyHint);
-
         var buttonsContainer = new HBoxContainer();
         buttonsContainer.Alignment = BoxContainer.AlignmentMode.End;
-        var hasPresets = presets.Count > 0;
-        if (hasPresets)
+        
+        if (presets.Count > 0)
         {
-            var dropdown = new PresetsDropdown(@object, propertyName, propertyHint, SelectFromPreset);
-            buttonsContainer.AddChild(dropdown);
+            _dropdown = new PresetsDropdown(@object, propertyName, propertyHint, SelectFromPreset);
+            buttonsContainer.AddChild(_dropdown);
         }
+
         var expandLayerSectionsButton = new ExpandLayerSectionsButton();
+        var addNewPresetButton = new AddNewPresetButton(@object, propertyName, propertyHint);
         buttonsContainer.AddChild(expandLayerSectionsButton);
         buttonsContainer.AddChild(addNewPresetButton);
 
-        _resetButton = new ResetButton(() => UpdateLayer(DefaultLayerValue));
-        buttonsContainer.AddChild(_resetButton);
-
-        if (hasPresets)
-        {
-            var settingsButton = new OpenPresetSettingsWindowButton(propertyHint);
-            buttonsContainer.AddChild(settingsButton);
-        }
+        var settingsButton = new OpenPresetSettingsWindowButton(propertyHint);
+        buttonsContainer.AddChild(settingsButton);
 
         _layerPicker = new LayerPicker((uint)@object.Get(propertyName), expandLayerSectionsButton);
         _layerPicker.OnLayerUpdatedManually += OnLayerUpdatedManually;
@@ -67,7 +59,6 @@ public partial class CustomLayerMaskProperty : EditorProperty
 
     public override void _EnterTree()
     {
-        SwitchResetButtonVisibility();
         PresetsController.OnPresetDeleted += OnPresetDeleted;
         PresetsController.OnAllPresetsDeleted += OnAllPresetsDeleted;
     }
@@ -76,6 +67,20 @@ public partial class CustomLayerMaskProperty : EditorProperty
     {
         PresetsController.OnPresetDeleted -= OnPresetDeleted;
         PresetsController.OnAllPresetsDeleted -= OnAllPresetsDeleted;
+    }
+
+    public override void _UpdateProperty()
+    {
+        // pressing the revert button does not call NotifyPropertyListChanged
+        // so the layerpicker and dropdown are not being updated, this is a way around it
+        if ((uint)_object.Get(GetEditedProperty()) == SettingsConstants.DefaultLayerValue)
+        {
+            if (_dropdown != null)
+            {
+                _dropdown.UpdateOnReset();
+            }
+            _layerPicker.UpdateOnReset();
+        }
     }
 
     private void SelectFromPreset(string presetId)
@@ -90,7 +95,6 @@ public partial class CustomLayerMaskProperty : EditorProperty
     {
         _object.Set(GetEditedProperty(), layer);
         _object.NotifyPropertyListChanged(); // updates the dropdown/layerpicker
-        SwitchResetButtonVisibility();
         EmitChanged(GetEditedProperty(), layer); // makes the scene dirty
     }
 
@@ -132,8 +136,8 @@ public partial class CustomLayerMaskProperty : EditorProperty
         }
     }
 
-    private void SwitchResetButtonVisibility()
-    {
-        _resetButton.Visible = (uint)_object.Get(GetEditedProperty()) != DefaultLayerValue;
-    }
+    //private void SwitchResetButtonVisibility()
+    //{
+    //    _resetButton.Visible = (uint)_object.Get(GetEditedProperty()) != SettingsConstants.DefaultLayerValue;
+    //}
 }

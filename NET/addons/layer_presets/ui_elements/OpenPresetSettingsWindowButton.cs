@@ -3,6 +3,8 @@ using Godot;
 namespace LayerPresets;
 public partial class OpenPresetSettingsWindowButton : Button
 {
+    public OpenPresetSettingsWindowButton() { }
+
     public OpenPresetSettingsWindowButton(PropertyHint propertyHint) 
     {
         TooltipText = "Open settings";
