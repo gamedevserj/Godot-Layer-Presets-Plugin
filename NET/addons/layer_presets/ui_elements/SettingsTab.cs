@@ -91,7 +91,7 @@ public partial class SettingsTab : VBoxContainer
         _presetsArea.AddChild(scrollContainer);
 
         _container.AddChild(_presetsArea);
-        UpdateELementsVisivilityOnPresetsAmountChanged();
+        UpdateElementsVisibilityOnPresetsAmountChanged();
         AddChild(_container);
     }
 
@@ -114,7 +114,7 @@ public partial class SettingsTab : VBoxContainer
         var presetElement = CreatePresetElement(preset);
         _presetsContainer.AddChild(presetElement);
         _presetsBindings.Add(preset.Id, presetElement);
-        UpdateELementsVisivilityOnPresetsAmountChanged();
+        UpdateElementsVisibilityOnPresetsAmountChanged();
     }
 
     private void OnPresetDeleted(string id)
@@ -125,7 +125,7 @@ public partial class SettingsTab : VBoxContainer
             _presetsBindings.Remove(id);
         }
 
-        UpdateELementsVisivilityOnPresetsAmountChanged();
+        UpdateElementsVisibilityOnPresetsAmountChanged();
     }
 
     private void OnAllPresetsDeleted(PropertyHint propertyHint)
@@ -138,11 +138,11 @@ public partial class SettingsTab : VBoxContainer
             }
 
             _presetsBindings.Clear();
-            UpdateELementsVisivilityOnPresetsAmountChanged();
+            UpdateElementsVisibilityOnPresetsAmountChanged();
         }
     }
 
-    private void UpdateELementsVisivilityOnPresetsAmountChanged()
+    private void UpdateElementsVisibilityOnPresetsAmountChanged()
     {
         var hasPresets = _presetsBindings.Count != 0;
         _deleteAllButton.Visible = hasPresets;
