@@ -10,14 +10,13 @@ public partial class CreateNewPresetDialog : ConfirmationDialog
     private readonly LineEdit _inputField;
     private readonly PropertyHint _propertyHint;
 
-    public CreateNewPresetDialog()
-    {}
+    public CreateNewPresetDialog() { }
 
     public CreateNewPresetDialog(GodotObject @object, string propertyName, uint currentLayer, PropertyHint propertyHint)
     {
         _propertyHint = propertyHint;
         var presets = PresetsController.GetAllPresets(propertyHint);
-        Title = $"Adding new {propertyHint} preset";
+        Title = $"Adding new {SettingsConstants.GetFormattedPropertyHintName(propertyHint)} preset";
         DialogCloseOnEscape = true;
 
         var okButton = GetOkButton();
@@ -43,7 +42,10 @@ public partial class CreateNewPresetDialog : ConfirmationDialog
         {
             var status = IsNameValid(newText, presetNames);
             nameIsValidLabel.Text = GetStatusMessage(status);
-            okButton.Disabled = status != NameValidityStatus.Valid;
+            var isValid = status == NameValidityStatus.Valid;
+            okButton.Disabled = !isValid;
+            var color = isValid ? Colors.Green : Colors.Red;
+            nameIsValidLabel.AddThemeColorOverride("font_color", color);
         };
 
         _inputField.TextSubmitted += (newText) =>
@@ -58,8 +60,7 @@ public partial class CreateNewPresetDialog : ConfirmationDialog
         Confirmed += () =>
         {
             var name = _inputField.Text;
-            var id = Guid.NewGuid().ToString();
-            PresetsController.AddPreset(new PresetData(id, name, currentLayer, _propertyHint));
+            var id = PresetsController.AddPreset(name, currentLayer, _propertyHint);
             @object.SetMeta(PresetsController.GetPresetMetaName(@object, propertyName, propertyHint), id);
             @object.NotifyPropertyListChanged();
             QueueFree();

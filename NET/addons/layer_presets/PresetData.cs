@@ -1,9 +1,13 @@
 using Godot;
 using Godot.Collections;
+using System;
 
 namespace LayerPresets;
 public partial class PresetData : GodotObject
 {
+    public static event Action<string, string> OnPresetNameUpdated;
+    public static event Action<PropertyHint, uint, uint> OnPresetLayerUpdated;
+
     public PresetData() { }
 
     public PresetData(string id, string name, uint layer, PropertyHint layerType)
@@ -28,15 +32,17 @@ public partial class PresetData : GodotObject
     public PropertyHint LayerType { get; private set; }
 
 
-    public void SetName(string name)
+    public void SetName(string newName)
     {
-        Name = name;
+        OnPresetNameUpdated?.Invoke(Id, newName);
+        Name = newName;
         PresetsController.SaveEditedPreset(this, LayerType);
     }
 
-    public void SetLayer(uint layer)
+    public void SetLayer(uint newLayer)
     {
-        Layer = layer;
+        OnPresetLayerUpdated?.Invoke(LayerType, Layer, newLayer);
+        Layer = newLayer;
         PresetsController.SaveEditedPreset(this, LayerType);
     }
 

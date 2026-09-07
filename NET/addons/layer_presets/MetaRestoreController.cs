@@ -1,5 +1,7 @@
 using Godot;
+using Godot.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LayerPresets;
 public static class MetaRestoreController
@@ -9,26 +11,50 @@ public static class MetaRestoreController
         List<string> scenePaths = [];
         FindSceneFiles(folder, scenePaths);
 
-        int updatedScenesCount = 0;
-
+        var editorInterface = EditorInterface.Singleton;
+        var openedScenes = editorInterface.GetOpenScenes();
         foreach (string path in scenePaths)
         {
-            var editorInterface = EditorInterface.Singleton;
-            editorInterface.OpenSceneFromPath(path);
-
-            var rootNode = editorInterface.GetEditedSceneRoot();
+            GD.Print($"Checking scene {path}");
+            var isOpen = openedScenes.Contains(path);
             bool modified = false;
+            if (isOpen)
+            {
+                editorInterface.OpenSceneFromPath(path);
+                var rootNode = editorInterface.GetEditedSceneRoot();
 
-            ProcessNode(rootNode, ref modified, targetPropertyHint);
+                ProcessNode(rootNode, ref modified, targetPropertyHint);
+
+                if (modified)
+                {
+                    editorInterface.SaveScene();
+                }
+            }
+            else
+            {
+                var packedScene = GD.Load<PackedScene>(path);
+                if (packedScene == null) continue;
+
+                var rootNode = packedScene.Instantiate<Node>();
+
+                // temporarily adding because setting properties require scene being in the tree
+                editorInterface.GetEditedSceneRoot().AddChild(rootNode);
+                ProcessNode(rootNode, ref modified, targetPropertyHint);
+                rootNode.GetParent()?.RemoveChild(rootNode);
+
+                if (modified)
+                {
+                    packedScene.Pack(rootNode);
+                    ResourceSaver.Save(packedScene, path);
+                }
+
+                rootNode.QueueFree();
+            }
 
             if (modified)
             {
-                editorInterface.SaveScene();
-                updatedScenesCount++;
                 GD.Print($"Scene updated: {path}");
             }
-
-            editorInterface.CloseScene();
         }
     }
 
@@ -64,21 +90,16 @@ public static class MetaRestoreController
         foreach (var prop in node.GetPropertyList())
         {
             string propertyName = prop["name"].AsString();
-            var propertyHint = prop["hint"].As<PropertyHint>();
-            var metaName = PresetsController.GetPresetMetaName(node, propertyName, propertyHint);
-            if (propertyHint == targetPropertyHint && node.HasMeta(metaName))
-            {
-                var presetId = (string)node.GetMeta(metaName);
-                var preset = PresetsController.GetPreset(presetId, propertyHint);
-                node.Set(propertyName, preset.Layer);
-                modified = true;
-                GD.Print($"Restored {SettingsConstants.GetFormattedPropertyName(propertyHint)} {propertyName} to preset {preset.Name} on Node: {node.Name}");
-            }
+
+            ProcessProperty(node, prop, targetPropertyHint, node.Name, ref modified);
 
             var val = node.Get(propertyName);
-            if (val.Obj is Resource resource && ProcessResource(resource))
+            if (val.Obj is Resource resource)
             {
-                modified = true;
+                foreach(var resourceProp in resource.GetPropertyList())
+                {
+                    ProcessProperty(resource, resourceProp, targetPropertyHint, $"Resource ID: {resource.ResourceSceneUniqueId}", ref modified);
+                }
 
                 // saving the file if resource is not local to scene
                 if (!string.IsNullOrEmpty(resource.ResourcePath))
@@ -94,26 +115,31 @@ public static class MetaRestoreController
         }
     }
 
-    private static bool ProcessResource(Resource resource)
+    private static void ProcessProperty(GodotObject @object, Dictionary prop, PropertyHint targetPropertyHint, string objectName, ref bool modified)
     {
-        bool resourceModified = false;
-        foreach (var prop in resource.GetPropertyList())
+        string propertyName = prop["name"].AsString();
+        var propertyHint = prop["hint"].As<PropertyHint>();
+        var metaName = PresetsController.GetPresetMetaName(@object, propertyName, propertyHint);
+        if (propertyHint == targetPropertyHint && @object.HasMeta(metaName))
         {
-            var propertyHint = prop["hint"].As<PropertyHint>();
-            if (propertyHint == PropertyHint.Layers3DPhysics)
+            var presetId = (string)@object.GetMeta(metaName);
+            var preset = PresetsController.GetPreset(presetId, propertyHint);
+            var currentValue = (uint)@object.Get(propertyName);
+            if (preset != null)
             {
-                string propertyName = prop["name"].AsString();
-                var metaName = PresetsController.GetPresetMetaName(resource, propertyName, propertyHint);
-                if (resource.HasMeta(metaName))
+                if (currentValue != preset.Layer)
                 {
-                    var presetId = (string)resource.GetMeta(metaName);
-                    var preset = PresetsController.GetPreset(presetId, propertyHint);
-                    resource.Set(propertyName, preset.Layer);
-                    resourceModified = true;
-                    GD.Print($"Restored {SettingsConstants.GetFormattedPropertyName(propertyHint)} {propertyName} to preset {preset.Name}");
+                    @object.Set(propertyName, preset.Layer);
+                    GD.Print($"Restored {SettingsConstants.GetFormattedPropertyHintName(propertyHint)} {propertyName} to preset {preset.Name} on object: '{objectName}'");
+                    modified = true;
                 }
             }
+            else
+            {
+                @object.RemoveMeta(metaName);
+                GD.Print($"Removed stale meta [{metaName} = {presetId}] on Node: {objectName}");
+                modified = true;
+            }
         }
-        return resourceModified;
     }
 }

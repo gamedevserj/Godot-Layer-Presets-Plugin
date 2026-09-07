@@ -1,11 +1,12 @@
 using Godot;
 using Godot.Collections;
+using System;
 
 namespace LayerPresets;
 internal static class PresetsController
 {
-    public delegate void PresetEdited(PresetData preset);
-    public static event PresetEdited OnPresetEdited;
+    public delegate void PresetCreated(PresetData preset);
+    public static event PresetCreated OnPresetCreated;
 
     public delegate void PresetDeleted(string id);
     public static event PresetDeleted OnPresetDeleted;
@@ -13,17 +14,27 @@ internal static class PresetsController
     public delegate void AllPresetsDeleted(PropertyHint propertyHint);
     public static event AllPresetsDeleted OnAllPresetsDeleted;
 
-    private static Dictionary<string, PresetData> _physics2dPresets = [];
-    private static Dictionary<string, PresetData> _physics3dPresets = [];
-    private static Dictionary<string, PresetData> _render2dPresets = [];
-    private static Dictionary<string, PresetData> _render3dPresets = [];
-    private static Dictionary<string, PresetData> _navigation2dPresets = [];
-    private static Dictionary<string, PresetData> _navigation3dPresets = [];
-    private static Dictionary<string, PresetData> _avoidance = [];
+    private static readonly Dictionary<string, PresetData> _physics2dPresets = [];
+    private static readonly Dictionary<string, PresetData> _physics3dPresets = [];
+    private static readonly Dictionary<string, PresetData> _render2dPresets = [];
+    private static readonly Dictionary<string, PresetData> _render3dPresets = [];
+    private static readonly Dictionary<string, PresetData> _navigation2dPresets = [];
+    private static readonly Dictionary<string, PresetData> _navigation3dPresets = [];
+    private static readonly Dictionary<string, PresetData> _avoidance = [];
 
     private static Dictionary<PropertyHint, Dictionary<string, PresetData>> _presetTypeBindings = [];
 
-    public static PresetData GetPreset(string id, PropertyHint propertyHint) => GetAllPresets(propertyHint)[id];
+    public static PresetData GetPreset(string id, PropertyHint propertyHint)
+    {
+        if (GetAllPresets(propertyHint).TryGetValue(id, out PresetData data))
+        {
+            return data;
+        }
+        else
+        {
+            return null;
+        }
+    }
 
     public static Dictionary<string, PresetData> GetAllPresets(PropertyHint propertyHint)
     {
@@ -40,14 +51,13 @@ internal static class PresetsController
                 { PropertyHint.LayersAvoidance, _avoidance },
             };
         }
-        var presets = _presetTypeBindings[propertyHint];
 
-        if (ProjectSettings.HasSetting(GetLayersSetting(propertyHint)) && presets.Count == 0)
+        if (ProjectSettings.HasSetting(GetLayersSetting(propertyHint)) && _presetTypeBindings[propertyHint].Count == 0)
         {
-            presets = LoadPresets(propertyHint);
+            _presetTypeBindings[propertyHint] = LoadPresets(propertyHint);
         }
 
-        return presets;
+        return _presetTypeBindings[propertyHint];
     }
 
     public static string GetPresetMetaName(GodotObject @object, string property, PropertyHint propertyHint)
@@ -62,14 +72,17 @@ internal static class PresetsController
         allDictionaryPresets[preset.Id] = preset.ToDictionary();
         ProjectSettings.SetSetting(GetLayersSetting(propertyHint), allDictionaryPresets);
         Save(propertyHint);
-        OnPresetEdited?.Invoke(preset);
     }
 
-    public static void AddPreset(PresetData preset)
+    public static string AddPreset(string name, uint layer, PropertyHint propertyHint)
     {
+        var id = Guid.NewGuid().ToString();
+        var preset = new PresetData(id, name, layer, propertyHint);
         var allPresets = GetAllPresets(preset.LayerType);
         allPresets.Add(preset.Id, preset);
         SaveAddedPreset(preset, preset.LayerType);
+        OnPresetCreated?.Invoke(preset);
+        return id;
     }
 
     public static void DeletePreset(string id, PropertyHint propertyHint)
@@ -119,6 +132,16 @@ internal static class PresetsController
             ProjectSettings.SetSetting(GetLayersSetting(propertyHint), allPresets);
         }
 
+        //var propertyInfo = new Dictionary
+        //    {
+        //        { "name", SettingsConstants.PhysicsLayers3DPresetsSetting },
+        //        { "type", (int)Variant.Type.Dictionary },
+        //        { "hint", (int)PropertyHint.DictionaryType }, 
+        //        // https://docs.godotengine.org/en/stable/classes/class_%40globalscope.html#enum-globalscope-propertyhint
+        //        // 11 is for the 3D Physics layer
+        //        { "hint_string", $"{(int)Variant.Type.String}:;{(int)Variant.Type.Int}/11:" }
+        //    };
+        //ProjectSettings.AddPropertyInfo(propertyInfo);
         Save(propertyHint);
     }
 

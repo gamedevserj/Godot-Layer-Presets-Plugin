@@ -16,19 +16,34 @@ public partial class PresetsDropdown : OptionButton
         SizeFlagsVertical = SizeFlags.ExpandFill;
         ClipText = true;
 
+        UpdateVisual((uint)@object.Get(propertyName));
         var presets = GetPresets();
         var indexesToIdsBind = new Dictionary<int, string>();
-        // dropdown selects by indexes, so I store them, can't use dictionary because layers can be non-unique
+        for (int i = 0; i < presets.Length; i++)
+        {
+            indexesToIdsBind.Add(i, presets[i].Id);
+        }        
+
+        ItemSelected += (index) => { onPresetSelected?.Invoke(indexesToIdsBind[(int)index]); };
+    }
+
+    public override void _EnterTree() => PresetData.OnPresetNameUpdated += OnPresetNameUpdated;
+
+    public override void _ExitTree() => PresetData.OnPresetNameUpdated -= OnPresetNameUpdated;
+
+    public void UpdateVisual(uint currentLayer)
+    {
+        var presets = GetPresets();
+        Clear();
+        // dropdown selects by indexes, so I store them
+        // not using dictionary because layers can be non-unique if user edits one in settings
         var layersToIndexesBind = new List<(uint layer, int index)>();
         for (int i = 0; i < presets.Length; i++)
         {
             AddItem(presets[i].Name);
             layersToIndexesBind.Add((presets[i].Layer, i));
-            indexesToIdsBind.Add(i, presets[i].Id);
         }
 
-        // selecting initial value
-        uint currentLayer = (uint)@object.Get(propertyName);
         var match = -1;
         for (int i = 0; i < layersToIndexesBind.Count; i++)
         {
@@ -42,40 +57,7 @@ public partial class PresetsDropdown : OptionButton
         Select(match);
         if (match == -1)
         {
-            Text = "No preset";
-        }
-
-        ItemSelected += (index) => { onPresetSelected?.Invoke(indexesToIdsBind[(int)index]); };
-    }
-
-    public override void _EnterTree() => PresetsController.OnPresetEdited += OnPresetEdited;
-
-    public override void _ExitTree() => PresetsController.OnPresetEdited -= OnPresetEdited;
-
-    public void UpdateOnReset()
-    {
-        var presets = GetPresets();
-        var layersToIndexesBind = new List<(uint layer, int index)>();
-        for (int i = 0; i < presets.Length; i++)
-        {
-            AddItem(presets[i].Name);
-            layersToIndexesBind.Add((presets[i].Layer, i));
-        }
-
-        var match = -1;
-        for (int i = 0; i < layersToIndexesBind.Count; i++)
-        {
-            if (layersToIndexesBind[i].layer == SettingsConstants.DefaultLayerValue)
-            {
-                match = layersToIndexesBind[i].index;
-                break;
-            }
-        }
-
-        Select(match);
-        if (match == -1)
-        {
-            Text = "No preset";
+            Text = SettingsConstants.NoPresetText;
         }
     }
 
@@ -107,6 +89,19 @@ public partial class PresetsDropdown : OptionButton
             if (presets[i].Id == preset.Id)
             {
                 SetItemText(i, preset.Name);
+                return;
+            }
+        }
+    }
+
+    private void OnPresetNameUpdated(string id, string newName)
+    {
+        var presets = GetPresets();
+        for (int i = 0; i < presets.Length; i++)
+        {
+            if (presets[i].Id == id)
+            {
+                SetItemText(i, newName);
                 return;
             }
         }

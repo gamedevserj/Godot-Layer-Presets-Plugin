@@ -5,6 +5,7 @@ namespace LayerPresets;
 internal static class SettingsConstants
 {
     public const uint DefaultLayerValue = 1;
+    public const string NoPresetText = "No preset";
 
     public static readonly Vector2I SettingsWindowSize = DisplayServer.ScreenGetSize() / 2;
     public static readonly HashSet<PropertyHint> HandledProperties =
@@ -22,7 +23,7 @@ internal static class SettingsConstants
 
     public static string GetLayersSetting(PropertyHint type) => $"LayerPresets/{type}";
 
-    public static string GetFormattedPropertyName(PropertyHint propertyHint)
+    public static string GetFormattedPropertyHintName(PropertyHint propertyHint)
     {
         return propertyHint switch
         {

@@ -4,7 +4,7 @@ using static Godot.Control;
 namespace LayerPresets;
 public partial class SettingsWindow : Window
 {
-    private const int Margin = 50;
+    private const int Margin = 20;
     private const int TabContentMargin = 10;
 
     public SettingsWindow(PropertyHint propertyHint) 
@@ -38,7 +38,7 @@ public partial class SettingsWindow : Window
         foreach (var layerType in SettingsConstants.HandledProperties)
         {
             tabContainer.AddChild(new SettingsTab(layerType));
-            tabContainer.SetTabTitle(tabIndex, SettingsConstants.GetFormattedPropertyName(layerType));
+            tabContainer.SetTabTitle(tabIndex, SettingsConstants.GetFormattedPropertyHintName(layerType));
             if (layerType == propertyHint)
             {
                 tabContainer.CurrentTab = tabIndex;
@@ -47,10 +47,8 @@ public partial class SettingsWindow : Window
         }
         
         marginContainer.AddChild(tabContainer);
-
         mainContainer.AddChild(marginContainer);
 
-        FocusExited += Close;
         CloseRequested += Close;
     }
 

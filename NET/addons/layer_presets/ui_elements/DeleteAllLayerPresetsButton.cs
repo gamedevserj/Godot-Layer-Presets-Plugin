@@ -9,7 +9,7 @@ public partial class DeleteAllLayerPresetsButton : Button
 
     public DeleteAllLayerPresetsButton(PropertyHint propertyHint) 
     {
-        Text = $"Delete all {SettingsConstants.GetFormattedPropertyName(propertyHint)} presets";
+        Text = $"Delete all '{SettingsConstants.GetFormattedPropertyHintName(propertyHint)}' presets".ToUpper();
         var normalStyle = new StyleBoxFlat();
         normalStyle.CornerRadiusBottomLeft =
             normalStyle.CornerRadiusBottomRight =
@@ -26,7 +26,5 @@ public partial class DeleteAllLayerPresetsButton : Button
         AddThemeStyleboxOverride("normal", normalStyle);
         AddThemeStyleboxOverride("hover", hoverStyle);
         AddThemeStyleboxOverride("pressed", pressedStyle);
-
-        Pressed += () => { PresetsController.DeleteAll(propertyHint); };
     }
 }

@@ -9,6 +9,7 @@ public partial class CustomLayerMaskProperty : EditorProperty
     private readonly GodotObject _object;
     private readonly LayerPicker _layerPicker;
     private readonly PresetsDropdown _dropdown;
+    private readonly AddNewPresetButton _addNewButton;
 
     public CustomLayerMaskProperty()
     {}
@@ -40,14 +41,14 @@ public partial class CustomLayerMaskProperty : EditorProperty
         }
 
         var expandLayerSectionsButton = new ExpandLayerSectionsButton();
-        var addNewPresetButton = new AddNewPresetButton(@object, propertyName, propertyHint);
+        _addNewButton = new AddNewPresetButton(@object, propertyName, propertyHint);
         buttonsContainer.AddChild(expandLayerSectionsButton);
-        buttonsContainer.AddChild(addNewPresetButton);
+        buttonsContainer.AddChild(_addNewButton);
 
         var settingsButton = new OpenPresetSettingsWindowButton(propertyHint);
         buttonsContainer.AddChild(settingsButton);
 
-        _layerPicker = new LayerPicker((uint)@object.Get(propertyName), expandLayerSectionsButton);
+        _layerPicker = new LayerPicker((uint)@object.Get(propertyName), expandLayerSectionsButton, _propertyHint);
         _layerPicker.OnLayerUpdatedManually += OnLayerUpdatedManually;
 
         verticalContainer.AddChild(buttonsContainer);
@@ -57,14 +58,27 @@ public partial class CustomLayerMaskProperty : EditorProperty
         SetBottomEditor(marginContainer);
     }
 
+    private uint CurrentLayer => (uint)_object.Get(GetEditedProperty());
+
     public override void _EnterTree()
     {
+        PresetData.OnPresetLayerUpdated += OnPresetLayerUpdated;
+
+        PresetsController.OnPresetCreated += OnPresetCreated;
         PresetsController.OnPresetDeleted += OnPresetDeleted;
         PresetsController.OnAllPresetsDeleted += OnAllPresetsDeleted;
     }
 
+    private void OnPresetCreated(PresetData preset)
+    {
+        _object.NotifyPropertyListChanged();
+    }
+
     public override void _ExitTree()
     {
+        PresetData.OnPresetLayerUpdated -= OnPresetLayerUpdated;
+
+        PresetsController.OnPresetCreated -= OnPresetCreated;
         PresetsController.OnPresetDeleted -= OnPresetDeleted;
         PresetsController.OnAllPresetsDeleted -= OnAllPresetsDeleted;
     }
@@ -73,14 +87,20 @@ public partial class CustomLayerMaskProperty : EditorProperty
     {
         // pressing the revert button does not call NotifyPropertyListChanged
         // so the layerpicker and dropdown are not being updated, this is a way around it
-        if ((uint)_object.Get(GetEditedProperty()) == SettingsConstants.DefaultLayerValue)
+        if (CurrentLayer == SettingsConstants.DefaultLayerValue)
         {
             if (_dropdown != null)
             {
-                _dropdown.UpdateOnReset();
+                _dropdown.UpdateVisual(SettingsConstants.DefaultLayerValue);
             }
             _layerPicker.UpdateOnReset();
         }
+        CheckAddButtonVisibility();
+    }
+
+    private void CheckAddButtonVisibility()
+    {
+        _addNewButton.Visible = _dropdown == null || _dropdown.Text == SettingsConstants.NoPresetText;
     }
 
     private void SelectFromPreset(string presetId)
@@ -106,7 +126,6 @@ public partial class CustomLayerMaskProperty : EditorProperty
         {
             if (preset.Layer == layer)
             {
-                
                 id = preset.Id;
                 break;
             }
@@ -126,7 +145,14 @@ public partial class CustomLayerMaskProperty : EditorProperty
 
     private string GetMetaName() => PresetsController.GetPresetMetaName(_object, GetEditedProperty(), _propertyHint);
 
-    private void OnPresetDeleted(string id) => _object.NotifyPropertyListChanged();
+    private void OnPresetDeleted(string id)
+    {
+        if (_object.HasMeta(GetMetaName()) && (string)_object.GetMeta(GetMetaName()) == id)
+        {
+            _object.RemoveMeta(GetMetaName());
+        }
+        _object.NotifyPropertyListChanged();
+    }
 
     private void OnAllPresetsDeleted(PropertyHint propertyHint)
     {
@@ -136,8 +162,12 @@ public partial class CustomLayerMaskProperty : EditorProperty
         }
     }
 
-    //private void SwitchResetButtonVisibility()
-    //{
-    //    _resetButton.Visible = (uint)_object.Get(GetEditedProperty()) != SettingsConstants.DefaultLayerValue;
-    //}
+    private void OnPresetLayerUpdated(PropertyHint layerType, uint oldLayer, uint newLayer)
+    {
+        if (layerType == _propertyHint && CurrentLayer == oldLayer)
+        {
+            _object.Set(GetEditedProperty(), newLayer);
+            _object.NotifyPropertyListChanged();
+        }
+    }
 }
