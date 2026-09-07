@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LayerPresets;
 
@@ -40,9 +41,10 @@ public partial class LayerPicker : GridContainer
             var button = new LayerPickerButton(bit, tooltipText, SettingsConstants.ButtonSize);
             button.ButtonPressed = (layer & (1u << bit)) != 0;
             _buttons[i] = button;
-            button.Toggled += pressed =>
+
+            button.OnButtonToggled += (pressed) => 
             {
-                var isLayerDefined = IsLayerAlreadyDefined(out string name);
+                var isLayerDefined = IsLayerAlreadyDefined(out string name, out uint layer);
                 if (!isLayerDefined)
                 {
                     UpdateLayer();
@@ -50,11 +52,10 @@ public partial class LayerPicker : GridContainer
                 else
                 {
                     GD.PrintErr($"Preset '{name}' already has the same layer!");
-                    button.SetBlockSignals(true);
-                    button.ButtonPressed = !button.ButtonPressed;
-                    button.SetBlockSignals(false);
+                    RevertButtonIfLayerIsDefined(bit, layer);
                 }
             };
+
             container.AddChild(button);
             if (i > 0 && (i + 1) % 8 == 0 && i < 31)
             {
@@ -144,6 +145,13 @@ public partial class LayerPicker : GridContainer
         OnLayerUpdatedManually?.Invoke(layer);
     }
 
+    private void RevertButtonIfLayerIsDefined(int bit, uint layer)
+    {
+        var isBitSet = (layer & (1u << bit)) != 0;
+        _buttons[bit].SetBlockSignals(true);
+        _buttons[bit].ButtonPressed = !isBitSet;
+        _buttons[bit].SetBlockSignals(false);
+    }
 
     private GridContainer CreateInnerGridContainer()
     {
@@ -159,9 +167,10 @@ public partial class LayerPicker : GridContainer
         return container;
     }
 
-    private bool IsLayerAlreadyDefined(out string presetName)
+    private bool IsLayerAlreadyDefined(out string presetName, out uint layer)
     {
         presetName = string.Empty;
+        layer = 0;
         var presets = PresetsController.GetAllPresets(_propertyHint);
 
         var defined = false;
@@ -171,6 +180,7 @@ public partial class LayerPicker : GridContainer
             {
                 defined = true;
                 presetName = preset.Name;
+                layer = preset.Layer;
                 break;
             }
         }
