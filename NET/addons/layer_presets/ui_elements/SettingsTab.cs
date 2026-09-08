@@ -175,7 +175,7 @@ public partial class SettingsTab : VBoxContainer
         var innerMargin = CreateMarginContainer(SettingsConstants.Margin);
 
         var innerContainer = new VBoxContainer();
-        var createButton = new Button();
+        var createButton = new ExtendedButton();
         createButton.Text = "Create new";
         createButton.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         createButton.Disabled = true;
@@ -185,11 +185,11 @@ public partial class SettingsTab : VBoxContainer
         duplicateNameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         duplicateNameLabel.HorizontalAlignment = HorizontalAlignment.Center;
         duplicateNameLabel.AddThemeColorOverride("font_color", Colors.Red);
-        var presetNameInput = new LineEdit
+        var presetNameInput = new ExtendedLineEdit
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
         };
-        presetNameInput.TextChanged += (text) =>
+        presetNameInput.OnTextChanged += (text) =>
         {
             var buttonDisabled = false;
             if (text == string.Empty)
@@ -221,18 +221,18 @@ public partial class SettingsTab : VBoxContainer
 
         var layerPicker = new LayerPicker(0, expandLayerSectionsButton, _propertyHint);
 
-        createButton.Pressed += () =>
+        createButton.OnButtonPressed += () =>
         {
-            PresetsController.AddPreset(presetNameInput.Text, layerPicker.GetLayerFromButtons(), _propertyHint);
             // not creating UI presets here because preset can be created via button in the inspector while the settings menu is open
-            // so subscribing to event is simpler to handle both cases
+            // so subscribing to event is simpler to handle both cases in terms of updating UI
+            PresetsController.AddPreset(presetNameInput.Text, layerPicker.GetLayerFromButtons(), _propertyHint);
             presetNameInput.Text = string.Empty;
             createButton.Disabled = true;
 
         };
         innerContainer.AddChild(presetNameContainer);
         innerContainer.AddChild(layerPicker);
-        
+
         innerContainer.AddChild(createButton);
         innerContainer.AddChild(duplicateNameLabel);
 

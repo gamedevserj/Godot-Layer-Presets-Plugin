@@ -6,20 +6,16 @@ namespace LayerPresets;
 public partial class LayerPresetsInspectorPlugin : EditorPlugin
 {
     private LayerPresetsInspector _inspector;
-    private Button _button;
+    private Control _control;
 
     public override void _EnterTree()
     {
         _inspector = new LayerPresetsInspector();
         AddInspectorPlugin(_inspector);
-        _button = new Button
-        {
-            Text = "Button",
-            SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
-            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin
-        };
 
-        AddControlToContainer(CustomControlContainer.ProjectSettingTabRight, _button);
+        _control = new SettingsViewControl(PropertyHint.Layers2DPhysics);
+        _control.Name = "Layer Presets";
+        AddControlToContainer(CustomControlContainer.ProjectSettingTabRight, _control);
     }
 
     public override void _ExitTree()
@@ -30,9 +26,9 @@ public partial class LayerPresetsInspectorPlugin : EditorPlugin
             _inspector = null;
         }
 
-        if (_button != null)
+        if (_control != null)
         {
-            _button.QueueFree();
+            _control.QueueFree();
         }
     }
 }

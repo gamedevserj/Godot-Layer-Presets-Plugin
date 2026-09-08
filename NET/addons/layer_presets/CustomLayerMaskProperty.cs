@@ -45,7 +45,7 @@ public partial class CustomLayerMaskProperty : EditorProperty
         buttonsContainer.AddChild(expandLayerSectionsButton);
         buttonsContainer.AddChild(_addNewButton);
 
-        var settingsButton = new OpenPresetSettingsWindowButton(propertyHint);
+        var settingsButton = new OpenSettingsButton(propertyHint);
         buttonsContainer.AddChild(settingsButton);
 
         _layerPicker = new LayerPicker((uint)@object.Get(propertyName), expandLayerSectionsButton, _propertyHint);

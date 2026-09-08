@@ -13,7 +13,6 @@ public partial class PresetsDropdown : OptionButton
     {
         _propertyHint = propertyHint;
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        SizeFlagsVertical = SizeFlags.ExpandFill;
         ClipText = true;
 
         UpdateVisual((uint)@object.Get(propertyName));

@@ -41,19 +41,7 @@ public partial class LayerPicker : GridContainer
             button.ButtonPressed = (layer & (1u << bit)) != 0;
             _buttons[i] = button;
 
-            button.OnButtonToggled += (pressed) => 
-            {
-                var isLayerDefined = IsLayerAlreadyDefined(out string name, out uint layer);
-                if (!isLayerDefined)
-                {
-                    UpdateLayer();
-                }
-                else
-                {
-                    GD.PrintErr($"Preset '{name}' already has the same layer!");
-                    RevertButtonIfLayerIsDefined(bit, layer);
-                }
-            };
+            button.OnButtonToggled += OnButtonToggled;
 
             container.AddChild(button);
             if (i > 0 && (i + 1) % 8 == 0 && i < 31)
@@ -95,6 +83,20 @@ public partial class LayerPicker : GridContainer
             }
         }
         return layer;
+    }
+
+    private void OnButtonToggled(int bit)
+    {
+        var isLayerDefined = IsLayerAlreadyDefined(out string name, out uint layer);
+        if (!isLayerDefined)
+        {
+            UpdateLayer();
+        }
+        else
+        {
+            GD.PrintErr($"Preset '{name}' already has the same layer!");
+            RevertButtonIfLayerIsDefined(bit, layer);
+        }
     }
 
     private void OnExpand()

@@ -7,6 +7,8 @@ public partial class DeleteAllLayerPresetsButton : Button
     private const string DeleteButtonHoverColor = "c82333";
     private const string DeleteButtonPressedColor = "bd2130";
 
+    public DeleteAllLayerPresetsButton() { }
+
     public DeleteAllLayerPresetsButton(PropertyHint propertyHint) 
     {
         Text = $"Delete all '{SettingsConstants.GetFormattedPropertyHintName(propertyHint)}' presets".ToUpper();

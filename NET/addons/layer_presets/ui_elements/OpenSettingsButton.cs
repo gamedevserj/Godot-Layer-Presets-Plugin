@@ -1,11 +1,11 @@
 using Godot;
 
 namespace LayerPresets;
-public partial class OpenPresetSettingsWindowButton : Button
+public partial class OpenSettingsButton : Button
 {
-    public OpenPresetSettingsWindowButton() { }
+    public OpenSettingsButton() { }
 
-    public OpenPresetSettingsWindowButton(PropertyHint propertyHint) 
+    public OpenSettingsButton(PropertyHint propertyHint) 
     {
         TooltipText = "Open settings";
         // https://godotengine.github.io/editor-icons/
