@@ -191,26 +191,20 @@ public partial class SettingsTab : VBoxContainer
         };
         presetNameInput.OnTextChanged += (text) =>
         {
-            var buttonDisabled = false;
-            if (text == string.Empty)
-            {
-                buttonDisabled = true;
-                duplicateNameLabel.Text = $"Name can not be empty";
-                duplicateNameLabel.Visible = buttonDisabled;
-                createButton.Disabled = buttonDisabled;
-                return;
-            }
+            HashSet<string> presetNames = [];
             foreach (var preset in presets.Values)
             {
-                if (preset.Name == text)
-                {
-                    buttonDisabled = true;
-                    duplicateNameLabel.Text = $"Presets '{text}' already defined";
-                    break;
-                }
+                presetNames.Add(preset.Name);
             }
-            duplicateNameLabel.Visible = buttonDisabled;
-            createButton.Disabled = buttonDisabled;
+            var status = NameValidator.IsNameValid(text, presetNames);
+            if (status != NameValidityStatus.Valid)
+            {
+                var message = NameValidator.GetStatusMessage(status);
+                duplicateNameLabel.Text = message;
+            }
+
+            duplicateNameLabel.Visible = status != NameValidityStatus.Valid;
+            createButton.Disabled = status != NameValidityStatus.Valid;
         };
 
         var expandLayerSectionsButton = new ExpandLayerSectionsButton();

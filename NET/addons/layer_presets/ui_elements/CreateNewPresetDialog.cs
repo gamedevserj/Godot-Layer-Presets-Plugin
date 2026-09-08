@@ -1,12 +1,9 @@
 using Godot;
-using System;
 using System.Collections.Generic;
 
 namespace LayerPresets;
 public partial class CreateNewPresetDialog : ConfirmationDialog
 {
-    private enum NameValidityStatus { Valid, Empty, Duplicate };
-
     private readonly LineEdit _inputField;
     private readonly PropertyHint _propertyHint;
 
@@ -40,8 +37,8 @@ public partial class CreateNewPresetDialog : ConfirmationDialog
 
         _inputField.TextChanged += (newText) =>
         {
-            var status = IsNameValid(newText, presetNames);
-            nameIsValidLabel.Text = GetStatusMessage(status);
+            var status = NameValidator.IsNameValid(newText, presetNames);
+            nameIsValidLabel.Text = NameValidator.GetStatusMessage(status);
             var isValid = status == NameValidityStatus.Valid;
             okButton.Disabled = !isValid;
             var color = isValid ? Colors.Green : Colors.Red;
@@ -50,7 +47,7 @@ public partial class CreateNewPresetDialog : ConfirmationDialog
 
         _inputField.TextSubmitted += (newText) =>
         {
-            var status = IsNameValid(newText, presetNames);
+            var status = NameValidator.IsNameValid(newText, presetNames);
             if (status == NameValidityStatus.Valid)
             {
                 EmitSignalConfirmed();
@@ -78,24 +75,4 @@ public partial class CreateNewPresetDialog : ConfirmationDialog
         PopupCentered();
         _inputField.GrabFocus();
     }
-
-    private static NameValidityStatus IsNameValid(string newPresetName, HashSet<string> presetNames)
-    {
-        if (string.IsNullOrWhiteSpace(newPresetName))
-            return NameValidityStatus.Empty;
-
-        if (presetNames.Contains(newPresetName))
-            return NameValidityStatus.Duplicate;
-
-        return NameValidityStatus.Valid;
-    }
-
-    private static string GetStatusMessage(NameValidityStatus status) =>
-        status switch
-        {
-            NameValidityStatus.Valid => "Name is valid",
-            NameValidityStatus.Empty => "Name can not be empty",
-            NameValidityStatus.Duplicate => "Preset with this name already exists",
-            _ => "Name can not be empty",
-        };
 }
