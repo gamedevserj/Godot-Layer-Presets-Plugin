@@ -118,7 +118,7 @@ public partial class CustomLayerMaskProperty : EditorProperty
         EmitChanged(GetEditedProperty(), layer); // makes the scene dirty
     }
 
-    private void OnLayerUpdatedManually(uint layer)
+    private void OnLayerUpdatedManually(int bit, uint layer)
     {
         var presets = PresetsController.GetAllPresets(_propertyHint);
         var id = "";

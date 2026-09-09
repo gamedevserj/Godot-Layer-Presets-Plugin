@@ -278,7 +278,10 @@ public partial class SettingsTab : VBoxContainer
         presetNameContainer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
 
         var layerPicker = new LayerPicker(preset.Layer, expandLayerSectionsButton, _propertyHint);
-        layerPicker.OnLayerUpdatedManually += preset.SetLayer;
+        layerPicker.OnLayerUpdatedManually += (bit, layer) => 
+        {
+            CheckIfLayerIsDuplicate(layerPicker, preset, bit, layer);
+        };
 
         var deleteButton = new DeletePresetButton();
         deleteButton.Pressed += () =>
@@ -305,6 +308,20 @@ public partial class SettingsTab : VBoxContainer
         mainContainer.AddChild(presetAndDeleteButtonContainer);
 
         return mainContainer;
+    }
+
+    private void CheckIfLayerIsDuplicate(LayerPicker layerPicker, PresetData preset, int bitChanged, uint layer)
+    {
+        var isLayerDefined = PresetsController.IsLayerDuplicate(_propertyHint, layer, out (string name, uint layer) presetDuplicate);
+        if (!isLayerDefined)
+        {
+            preset.SetLayer(layer);
+        }
+        else
+        {
+            GD.PrintErr($"Preset '{presetDuplicate.name}' already has the same layer!");
+            layerPicker.RevertButtonIfLayerIsDefined(bitChanged, presetDuplicate.layer);
+        }
     }
 
     private static ScrollContainer CreateScrollContainer()

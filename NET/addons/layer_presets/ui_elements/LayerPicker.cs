@@ -41,7 +41,7 @@ public partial class LayerPicker : GridContainer
             button.ButtonPressed = (layer & (1u << bit)) != 0;
             _buttons[i] = button;
 
-            button.OnButtonToggled += OnButtonToggled;
+            button.OnButtonToggled += UpdateLayer;
 
             container.AddChild(button);
             if (i > 0 && (i + 1) % 8 == 0 && i < 31)
@@ -52,7 +52,7 @@ public partial class LayerPicker : GridContainer
         }
     }
 
-    public Action<uint> OnLayerUpdatedManually { get; set; }
+    public Action<int, uint> OnLayerUpdatedManually { get; set; }
 
     public override void _Notification(int what)
     {
@@ -85,18 +85,12 @@ public partial class LayerPicker : GridContainer
         return layer;
     }
 
-    private void OnButtonToggled(int bit)
+    public void RevertButtonIfLayerIsDefined(int bit, uint layer)
     {
-        var isLayerDefined = IsLayerAlreadyDefined(out string name, out uint layer);
-        if (!isLayerDefined)
-        {
-            UpdateLayer();
-        }
-        else
-        {
-            GD.PrintErr($"Preset '{name}' already has the same layer!");
-            RevertButtonIfLayerIsDefined(bit, layer);
-        }
+        var isBitSet = (layer & (1u << bit)) != 0;
+        _buttons[bit].SetBlockSignals(true);
+        _buttons[bit].ButtonPressed = !isBitSet;
+        _buttons[bit].SetBlockSignals(false);
     }
 
     private void OnExpand()
@@ -140,18 +134,10 @@ public partial class LayerPicker : GridContainer
         }
     }
 
-    private void UpdateLayer()
+    private void UpdateLayer(int bit)
     {
         uint layer = GetLayerFromButtons();
-        OnLayerUpdatedManually?.Invoke(layer);
-    }
-
-    private void RevertButtonIfLayerIsDefined(int bit, uint layer)
-    {
-        var isBitSet = (layer & (1u << bit)) != 0;
-        _buttons[bit].SetBlockSignals(true);
-        _buttons[bit].ButtonPressed = !isBitSet;
-        _buttons[bit].SetBlockSignals(false);
+        OnLayerUpdatedManually?.Invoke(bit, layer);
     }
 
     private GridContainer CreateInnerGridContainer()
@@ -166,26 +152,5 @@ public partial class LayerPicker : GridContainer
 
         AddChild(container);
         return container;
-    }
-
-    private bool IsLayerAlreadyDefined(out string presetName, out uint layer)
-    {
-        presetName = string.Empty;
-        layer = 0;
-        var presets = PresetsController.GetAllPresets(_propertyHint);
-
-        var defined = false;
-        foreach (var preset in presets.Values)
-        {
-            if (preset.Layer == GetLayerFromButtons())
-            {
-                defined = true;
-                presetName = preset.Name;
-                layer = preset.Layer;
-                break;
-            }
-        }
-
-        return defined;
     }
 }

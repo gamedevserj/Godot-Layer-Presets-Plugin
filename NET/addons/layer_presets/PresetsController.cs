@@ -60,6 +60,24 @@ internal static class PresetsController
         return _presetTypeBindings[propertyHint];
     }
 
+    public static bool IsLayerDuplicate(PropertyHint propertyHint, uint layer, out (string name, uint layer) presetDuplicate)
+    {
+        var presets = GetAllPresets(propertyHint);
+        var defined = false;
+        presetDuplicate = default;
+        foreach (var preset in presets.Values)
+        {
+            if (preset.Layer == layer)
+            {
+                defined = true;
+                presetDuplicate = (preset.Name, preset.Layer);
+                break;
+            }
+        }
+
+        return defined;
+    }
+
     public static string GetPresetMetaName(GodotObject @object, string property, PropertyHint propertyHint)
     {
         return $"{@object.GetType().Name}_{propertyHint}_{property}";
