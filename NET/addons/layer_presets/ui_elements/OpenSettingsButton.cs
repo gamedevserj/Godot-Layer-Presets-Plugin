@@ -7,7 +7,7 @@ public partial class OpenSettingsButton : Button
 
     public OpenSettingsButton(PropertyHint propertyHint) 
     {
-        TooltipText = "Open settings";
+        TooltipText = "Layer preset settings";
         // https://godotengine.github.io/editor-icons/
         Icon = EditorInterface.Singleton.GetBaseControl().GetThemeIcon("GDScript", "EditorIcons");
         Pressed += () => OpenSettingsWindow(propertyHint);
