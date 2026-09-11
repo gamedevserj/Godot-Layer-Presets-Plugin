@@ -7,7 +7,7 @@ internal static class SettingsConstants
     public const uint DefaultLayerValue = 1;
     public const string NoPresetText = "No preset";
 
-    public static readonly Vector2I SettingsWindowSize = DisplayServer.ScreenGetSize() / 2;
+    public static Vector2I SettingsWindowSize => new(EditorWindowSize.X / 2, EditorWindowSize.Y);
     public static readonly HashSet<PropertyHint> HandledProperties =
         [
             PropertyHint.Layers2DPhysics, PropertyHint.Layers3DPhysics,
@@ -20,6 +20,20 @@ internal static class SettingsConstants
     public const int LayerPickerSectionSeparation = 10;
     public const int LayerPickerButtonSeparation = 4;
     public const int Margin = 10;
+
+    private static Vector2I EditorWindowSize 
+    {
+        get
+        {
+            var tree = Engine.GetMainLoop() as SceneTree;
+            if (tree?.Root != null)
+            {
+                return (Vector2I)tree.Root.GetVisibleRect().Size;
+            }
+
+            return DisplayServer.Singleton.WindowGetSize((int)DisplayServer.MainWindowId);
+        }
+    }
 
     public static string GetLayersSetting(PropertyHint type) => $"LayerPresets/{type}";
 
