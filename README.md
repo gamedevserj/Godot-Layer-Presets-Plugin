@@ -16,7 +16,7 @@ There are two ways of creating a preset:
   - Set it up by clicking which layers should be enabled/disabled for that preset
   - Click the '+' button to add new preset from the current setup
 2. In the settings window
-  - The plugin adds a tab to project settings called 'Layer presets', so you can go Project Settings -> Layer presets
+  - The plugin adds buttons to 2D and 3D workspace menus, click it to open the settings window.
   - Or if you have a node selected that has a property with one of the handled attributes - there is a button with cog icon which opens the settings window
 
 In the settings you can create/edit/delete presets.  
