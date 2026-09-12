@@ -3,6 +3,8 @@
 Inspired by https://github.com/Adrien-Lucas/godot-collision-presets  
 This plugin allows creating presets for Physics2D/3D, Render2D/3D, Navigation2D/3D, and Avoidance layers.  
 
+<video src="https://github.com/user-attachments/assets/fe5ecf1b-ad77-4e26-9238-7c9b6f178d78" width="578" height="422"></video>
+
 ## How to use
 - Copy layer_presets folder into your addons folder
 - Go to Project Settings -> Plugins and enable the plugin
