@@ -50,8 +50,6 @@ public partial class LayerPickerButton : Button
         AddThemeStyleboxOverride("hover_pressed", hoverPressedStyle);
         AddThemeStyleboxOverride("pressed", pressedStyle);
 
-        // doing it this way prevents editor from throwing error when rebuilding (hot reload issue)
-        // similar to ButtonBase Pressed
         Toggled += (toggledOn) => { OnButtonToggled?.Invoke(Bit); };
     }
 
