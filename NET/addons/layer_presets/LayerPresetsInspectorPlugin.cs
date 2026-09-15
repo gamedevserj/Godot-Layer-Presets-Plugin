@@ -30,12 +30,12 @@ public partial class LayerPresetsInspectorPlugin : EditorPlugin
 
         if (_settingsButtonScreen2d != null)
         {
-            _settingsButtonScreen2d.QueueFree();
+            RemoveControlFromContainer(CustomControlContainer.CanvasEditorMenu, _settingsButtonScreen2d);
         }
 
         if (_settingsButtonScreen3d != null)
         {
-            _settingsButtonScreen3d.QueueFree();
+            RemoveControlFromContainer(CustomControlContainer.SpatialEditorMenu, _settingsButtonScreen3d);
         }
     }
 }
